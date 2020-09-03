@@ -175,7 +175,8 @@ void Am2320Show(bool json)
 
 #ifdef USE_DOMOTICZ
     if (0 == tele_period) {
-      DomoticzTempHumSensor(temperature, humidity);
+      //DomoticzTempHumSensor(temperature, humidity);
+      DomoticzTempHumPressureSensor(AM2320.t, AM2320.h, -1);
     }
 #endif  // USE_DOMOTICZ
 #ifdef USE_KNX
