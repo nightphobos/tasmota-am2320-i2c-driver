@@ -175,7 +175,7 @@ void Am2320Show(bool json)
   if (json) {
     ResponseAppend_P(PSTR(",\"%s\":{\"" D_JSON_TEMPERATURE "\":%s,\"" D_JSON_HUMIDITY "\":%s,\"" D_JSON_DEWPOINT "\":%s}"),AM2320_types,temperature,humidity,dewpoint);
 
-#ifdef USE_DOMOTICZ
+/*#ifdef USE_DOMOTICZ
     if (0 == tele_period) {
       //DomoticzTempHumSensor(temperature, humidity);
       DomoticzTempHumPressureSensor(AM2320.t, AM2320.h, -1);
@@ -186,7 +186,7 @@ void Am2320Show(bool json)
       KnxSensor(KNX_TEMPERATURE, temperature);
       KnxSensor(KNX_HUMIDITY, humidity);
     }
-#endif  // USE_KNX
+#endif  // USE_KNX*/
 #ifdef USE_WEBSERVER
   } else {
     WSContentSend_PD(HTTP_SNS_TEMP, AM2320_types, temperature, TempUnit());
