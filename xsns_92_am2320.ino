@@ -117,7 +117,7 @@ bool Am2320Read(void)
     return true;
     
   } else {
-    AddLog_P(LOG_LEVEL_ERROR, PSTR(D_LOG_I2C "Am2320Read() checksum failed"));
+    AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_I2C "Am2320Read() checksum failed"));
     return false;
   }
 }
@@ -127,9 +127,9 @@ void Am2320Detect(void)
 {  
   if (Am2320Init()) {
     if (!am2320_found) {
-      AddLog_P(LOG_LEVEL_INFO, S_LOG_I2C_FOUND_AT, AM2320_types, AM2320_ADDR);
+      AddLog(LOG_LEVEL_INFO, S_LOG_I2C_FOUND_AT, AM2320_types, AM2320_ADDR);
     } else {
-      AddLog_P(LOG_LEVEL_DEBUG, S_LOG_I2C_FOUND_AT, AM2320_types, AM2320_ADDR);
+      AddLog(LOG_LEVEL_DEBUG, S_LOG_I2C_FOUND_AT, AM2320_types, AM2320_ADDR);
     }
     am2320_found = 3;
   } else {
@@ -156,42 +156,35 @@ void Am2320Show(bool json)
 {
   if (!am2320_found) { return; } // no sensor, no show :(
 
-  // after SENSOR_MAX_MISS sec. with no update (AM2320.valid == 0), 
-  // skip propagation of old sensor values, instead show '--'
-  char temperature[33];
-  char humidity[33];
-  char dewpoint[33];
+  float t, h, dewpoint;
+
   if (AM2320.valid) {
-    dtostrfd(AM2320.t, Settings.flag2.temperature_resolution, temperature);
-    dtostrfd(AM2320.h, Settings.flag2.humidity_resolution, humidity);
-    float f_dewpoint = CalcTempHumToDew(AM2320.t, AM2320.h);
-    dtostrfd(f_dewpoint, Settings.flag2.temperature_resolution, dewpoint);
+    t = ConvertTemp(AM2320.t);
+    h = ConvertHumidity(AM2320.h);
+    dewpoint = CalcTempHumToDew(AM2320.t, AM2320.h);
   } else {
-    strncpy(humidity, "-- ", 32);
-    strncpy(temperature, "-- ", 32);
-    strncpy(dewpoint, "-- ", 32);
+    t = -1;
+    h = -1;
+    dewpoint = -1;
   }
 
   if (json) {
-    ResponseAppend_P(PSTR(",\"%s\":{\"" D_JSON_TEMPERATURE "\":%s,\"" D_JSON_HUMIDITY "\":%s,\"" D_JSON_DEWPOINT "\":%s}"),AM2320_types,temperature,humidity,dewpoint);
+    ResponseAppend_P(PSTR(",\"%s\":{\"" D_JSON_TEMPERATURE "\":%f,\"" D_JSON_HUMIDITY "\":%f,\"" D_JSON_DEWPOINT "\":%f}"),AM2320_types,t,h,dewpoint);
 
-/*#ifdef USE_DOMOTICZ
-    if (0 == tele_period) {
-      //DomoticzTempHumSensor(temperature, humidity);
-      DomoticzTempHumPressureSensor(AM2320.t, AM2320.h, -1);
+#ifdef USE_DOMOTICZ
+    if (0 == Settings->tele_period) {
+      DomoticzTempHumPressureSensor(t, h);
     }
 #endif  // USE_DOMOTICZ
 #ifdef USE_KNX
-    if (0 == tele_period) {
-      KnxSensor(KNX_TEMPERATURE, temperature);
-      KnxSensor(KNX_HUMIDITY, humidity);
+    if (0 == Settings->tele_period) {
+      KnxSensor(KNX_TEMPERATURE, t);
+      KnxSensor(KNX_HUMIDITY, h);
     }
-#endif  // USE_KNX*/
+#endif  // USE_KNX
 #ifdef USE_WEBSERVER
   } else {
-    WSContentSend_PD(HTTP_SNS_TEMP, AM2320_types, temperature, TempUnit());
-    WSContentSend_PD(HTTP_SNS_HUM, AM2320_types, humidity);
-    WSContentSend_PD(HTTP_SNS_DEW, AM2320_types, dewpoint, TempUnit());
+    WSContentSend_THD(AM2320_types, t, h);
 #endif  // USE_WEBSERVER
   }
 }
